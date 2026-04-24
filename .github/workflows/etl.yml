@@ -1,0 +1,34 @@
+name: GoodAir ETL Pipeline
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # toutes les heures
+  workflow_dispatch:        # bouton manuel pour tester
+
+jobs:
+  etl:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v3
+
+      - name: Installer Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Installer les dépendances
+        run: pip install -r etl/requirements.txt
+
+      - name: Lancer le ETL
+        env:
+          AQICN_TOKEN:       ${{ secrets.AQICN_TOKEN }}
+          OWM_API_KEY:       ${{ secrets.OWM_API_KEY }}
+          POSTGRES_HOST:     ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_PORT:     ${{ secrets.POSTGRES_PORT }}
+          POSTGRES_DB:       ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER:     ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          ETL_INTERVAL_MINUTES: "60"
+        run: python etl/main.py --once
