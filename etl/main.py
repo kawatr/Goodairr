@@ -369,14 +369,16 @@ def run_pipeline():
 #  SCHEDULER – toutes les heures
 # ============================================================
 if __name__ == "__main__":
-    log.info(f"GoodAir ETL démarré – collecte toutes les {ETL_INTERVAL} minutes")
-
-    # Première exécution immédiate au démarrage
-    run_pipeline()
-
-    # Puis toutes les heures
-    schedule.every(ETL_INTERVAL).minutes.do(run_pipeline)
-
-    while True:
-        schedule.run_pending()
-        time.sleep(30)
+    import sys
+    if "--once" in sys.argv:
+        # Mode GitHub Actions : une seule exécution
+        log.info("Mode --once : exécution unique")
+        run_pipeline()
+    else:
+        # Mode local : tourne en boucle toutes les heures
+        log.info(f"Mode scheduler : toutes les {ETL_INTERVAL} minutes")
+        run_pipeline()
+        schedule.every(ETL_INTERVAL).minutes.do(run_pipeline)
+        while True:
+            schedule.run_pending()
+            time.sleep(30)
