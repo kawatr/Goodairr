@@ -2,10 +2,10 @@ name: GoodAir ETL Pipeline
 
 on:
   schedule:
-    - cron: '0 * * * *'              # toutes les heures
-  workflow_dispatch:                   # bouton manuel
+    - cron: '0 * * * *'           # toutes les heures
+  workflow_dispatch:                # bouton manuel
   push:
-    branches: [main, principal]        # relance à chaque commit
+    branches: [main, principal]     # relance à chaque commit
 
 jobs:
   etl:
@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Récupérer le code
-        uses: actions/checkout@v4     # v4 = pas d'avertissement Node.js
+        uses: actions/checkout@v4
 
       - name: Installer Python
         uses: actions/setup-python@v5
@@ -34,12 +34,3 @@ jobs:
           POSTGRES_PASSWORD:    ${{ secrets.POSTGRES_PASSWORD }}
           ETL_INTERVAL_MINUTES: "60"
         run: python etl/main.py --once
-
-      - name: Marquer l activité du repo
-        run: echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> .github/last_run.txt
-
-      - name: Commit automatique pour garder le cron actif
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore: ETL run $(date +'%Y-%m-%d %H:%M UTC')"
-          file_pattern: .github/last_run.txt
