@@ -2,8 +2,10 @@ name: GoodAir ETL Pipeline
 
 on:
   schedule:
-    - cron: '0 * * * *'   # toutes les heures
-  workflow_dispatch:        # bouton manuel pour tester
+    - cron: '0 * * * *'              # toutes les heures
+  workflow_dispatch:                   # bouton manuel
+  push:
+    branches: [main, principal]        # relance à chaque commit
 
 jobs:
   etl:
@@ -11,10 +13,10 @@ jobs:
 
     steps:
       - name: Récupérer le code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4     # v4 = pas d'avertissement Node.js
 
       - name: Installer Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -23,12 +25,21 @@ jobs:
 
       - name: Lancer le ETL
         env:
-          AQICN_TOKEN:       ${{ secrets.AQICN_TOKEN }}
-          OWM_API_KEY:       ${{ secrets.OWM_API_KEY }}
-          POSTGRES_HOST:     ${{ secrets.POSTGRES_HOST }}
-          POSTGRES_PORT:     ${{ secrets.POSTGRES_PORT }}
-          POSTGRES_DB:       ${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER:     ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          AQICN_TOKEN:          ${{ secrets.AQICN_TOKEN }}
+          OWM_API_KEY:          ${{ secrets.OWM_API_KEY }}
+          POSTGRES_HOST:        ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_PORT:        ${{ secrets.POSTGRES_PORT }}
+          POSTGRES_DB:          ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER:        ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD:    ${{ secrets.POSTGRES_PASSWORD }}
           ETL_INTERVAL_MINUTES: "60"
         run: python etl/main.py --once
+
+      - name: Marquer l activité du repo
+        run: echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> .github/last_run.txt
+
+      - name: Commit automatique pour garder le cron actif
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: ETL run $(date +'%Y-%m-%d %H:%M UTC')"
+          file_pattern: .github/last_run.txt
